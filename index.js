@@ -52,6 +52,7 @@ client.on("messageCreate", async message => {
       .setDescription("Commands for moderators:")
       .addFields(
         { name: ".ban <user> [reason]", value: "Ban a member" },
+        { name: ".unban <user> [reason]", value: "Unban a member" },
         { name: ".kick <user> [reason]", value: "Kick a member" },
         { name: ".warn <user> [reason]", value: "Warn a member" },
         { name: ".unwarn <user> <#>", value: "Remove a specific warning" },
@@ -78,6 +79,26 @@ client.on("messageCreate", async message => {
     message.channel.send({ embeds: [createEmbed("Ban", `${member.user.tag} was banned.\nReason: ${reason}`, "#FF0000")] });
   }
 
+  // === UNBAN ===
+  if (cmd === "unban") {
+    if (!message.member.permissions.has(PermissionsBitField.Flags.BanMembers)) return message.reply("No permission");
+    const userId = args[0];
+    if (!userId) return message.reply("Please provide the ID of the user to unban.");
+    const reason = args.slice(1).join(" ") || "No reason provided";
+
+    try {
+      const bannedUsers = await message.guild.bans.fetch();
+      const bannedUser = bannedUsers.get(userId);
+      if (!bannedUser) return message.reply("This user is not banned.");
+
+      await message.guild.members.unban(userId, reason);
+      message.channel.send({ embeds: [createEmbed("Unban", `${bannedUser.user.tag} has been unbanned.\nReason: ${reason}`, "#00FF00")] });
+    } catch (err) {
+      console.error(err);
+      message.reply("There was an error trying to unban that user.");
+    }
+  }
+
   // === KICK ===
   if (cmd === "kick") {
     if (!message.member.permissions.has(PermissionsBitField.Flags.KickMembers)) return message.reply("No permission");
@@ -88,7 +109,7 @@ client.on("messageCreate", async message => {
     message.channel.send({ embeds: [createEmbed("Kick", `${member.user.tag} was kicked.\nReason: ${reason}`, "#FF4500")] });
   }
 
-  // === WARN with Auto-Actions ===
+  // === WARN ===
   if (cmd === "warn") {
     if (!message.member.permissions.has(PermissionsBitField.Flags.ModerateMembers)) return message.reply("No permission");
     const member = resolveMember(message, args[0]);
@@ -101,7 +122,7 @@ client.on("messageCreate", async message => {
 
     message.channel.send({ embeds: [createEmbed("Warn", `${member.user.tag} was warned.\nReason: ${reason}`, "#FFA500")] });
 
-    // Auto-actions
+    // Auto actions
     const warnCount = warnings[member.id].length;
 
     if (warnCount === 3) {
@@ -130,12 +151,9 @@ client.on("messageCreate", async message => {
   // === WARNINGS ===
   if (cmd === "warnings") {
     let member = resolveMember(message, args[0]);
-
-    // Regular users see only their own
     if (!message.member.permissions.has(PermissionsBitField.Flags.ModerateMembers)) {
       member = message.member;
     }
-
     if (!member) return message.reply("User not found");
     const userWarnings = warnings[member.id] || [];
     const embed = new EmbedBuilder()
@@ -145,7 +163,6 @@ client.on("messageCreate", async message => {
         ? userWarnings.map((w,i) => `${i+1}. ${w.reason} - ${w.date}`).join("\n")
         : "No warnings")
       .setTimestamp();
-
     message.channel.send({ embeds: [embed] });
   }
 
