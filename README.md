@@ -61,7 +61,6 @@ Please report any bugs or issues in the GitHub Issues tab.
 
 ## License
 
-MIT License — free to use and modify.
 
 MIT License — free to use and modify.
 
