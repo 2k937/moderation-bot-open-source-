@@ -3,6 +3,7 @@ const fs = require("fs");
 const path = require("path");
 
 const PREFIX = ".";
+const TOKEN = "YOUR_BOT_TOKEN_HERE"; 
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -20,10 +21,20 @@ let warnings = fs.existsSync(warningsFile) ? JSON.parse(fs.readFileSync(warnings
 // === Helpers ===
 function saveWarnings() { fs.writeFileSync(warningsFile, JSON.stringify(warnings, null, 2)); }
 
-function resolveMember(message, arg) {
+async function resolveMemberOrID(message, arg) {
   if (!arg) return null;
-  const id = arg.replace(/[<@!>]/g, "");
-  return message.guild.members.cache.get(id) || message.mentions.members.first();
+
+  // If it's a mention, resolve member
+  const mentionId = arg.replace(/[<@!>]/g, "");
+  const member = message.guild.members.cache.get(mentionId);
+  if (member) return member;
+
+  // If it's a raw ID, try fetching the member
+  try {
+    return await message.guild.members.fetch(arg);
+  } catch {
+    return null;
+  }
 }
 
 function createEmbed(title, description, color = "#FF0000") {
@@ -40,7 +51,7 @@ client.on("messageCreate", async message => {
   const args = message.content.slice(PREFIX.length).trim().split(/ +/);
   const cmd = args.shift().toLowerCase();
 
-  // === HELP COMMAND ===
+  // === HELP ===
   if (cmd === "help") {
     if (!message.member.permissions.has(PermissionsBitField.Flags.ModerateMembers)) {
       return message.reply({ embeds: [createEmbed("Help", "You are not authorized to view this help menu.", "#FF0000")] });
@@ -72,7 +83,7 @@ client.on("messageCreate", async message => {
   // === BAN ===
   if (cmd === "ban") {
     if (!message.member.permissions.has(PermissionsBitField.Flags.BanMembers)) return message.reply("No permission");
-    const member = resolveMember(message, args[0]);
+    const member = await resolveMemberOrID(message, args[0]);
     if (!member) return message.reply("User not found");
     const reason = args.slice(1).join(" ") || "No reason provided";
     await member.ban({ reason });
@@ -90,7 +101,6 @@ client.on("messageCreate", async message => {
       const bannedUsers = await message.guild.bans.fetch();
       const bannedUser = bannedUsers.get(userId);
       if (!bannedUser) return message.reply("This user is not banned.");
-
       await message.guild.members.unban(userId, reason);
       message.channel.send({ embeds: [createEmbed("Unban", `${bannedUser.user.tag} has been unbanned.\nReason: ${reason}`, "#00FF00")] });
     } catch (err) {
@@ -102,7 +112,7 @@ client.on("messageCreate", async message => {
   // === KICK ===
   if (cmd === "kick") {
     if (!message.member.permissions.has(PermissionsBitField.Flags.KickMembers)) return message.reply("No permission");
-    const member = resolveMember(message, args[0]);
+    const member = await resolveMemberOrID(message, args[0]);
     if (!member) return message.reply("User not found");
     const reason = args.slice(1).join(" ") || "No reason provided";
     await member.kick(reason);
@@ -112,35 +122,20 @@ client.on("messageCreate", async message => {
   // === WARN ===
   if (cmd === "warn") {
     if (!message.member.permissions.has(PermissionsBitField.Flags.ModerateMembers)) return message.reply("No permission");
-    const member = resolveMember(message, args[0]);
+    const member = await resolveMemberOrID(message, args[0]);
     if (!member) return message.reply("User not found");
     const reason = args.slice(1).join(" ") || "No reason provided";
 
     if (!warnings[member.id]) warnings[member.id] = [];
     warnings[member.id].push({ reason, date: new Date().toISOString() });
     saveWarnings();
-
     message.channel.send({ embeds: [createEmbed("Warn", `${member.user.tag} was warned.\nReason: ${reason}`, "#FFA500")] });
-
-    // Auto actions
-    const warnCount = warnings[member.id].length;
-
-    if (warnCount === 3) {
-      await member.timeout(10 * 60 * 1000, "Reached 3 warnings (auto timeout)");
-      message.channel.send({ embeds: [createEmbed("Auto Timeout (10 min)", `${member.user.tag} timed out automatically for 10 minutes.`, "#00FFFF")] });
-    } else if (warnCount === 5) {
-      await member.timeout(60 * 60 * 1000, "Reached 5 warnings (auto timeout)");
-      message.channel.send({ embeds: [createEmbed("Auto Timeout (1 hour)", `${member.user.tag} timed out automatically for 1 hour.`, "#00FFFF")] });
-    } else if (warnCount >= 10) {
-      await member.ban({ reason: "Reached 10 warnings (auto ban)" });
-      message.channel.send({ embeds: [createEmbed("Auto Ban", `${member.user.tag} was banned automatically for 10 warnings.`, "#FF0000")] });
-    }
   }
 
   // === UNWARN ===
   if (cmd === "unwarn") {
     if (!message.member.permissions.has(PermissionsBitField.Flags.ModerateMembers)) return message.reply("No permission");
-    const member = resolveMember(message, args[0]);
+    const member = await resolveMemberOrID(message, args[0]);
     const index = parseInt(args[1]) - 1;
     if (!member || !warnings[member.id] || !warnings[member.id][index]) return message.reply("Warning not found");
     warnings[member.id].splice(index, 1);
@@ -148,28 +143,47 @@ client.on("messageCreate", async message => {
     message.channel.send({ embeds: [createEmbed("Warning Removed", `Removed warning #${index+1} from ${member.user.tag}`, "#00FF00")] });
   }
 
-  // === WARNINGS ===
-  if (cmd === "warnings") {
-    let member = resolveMember(message, args[0]);
-    if (!message.member.permissions.has(PermissionsBitField.Flags.ModerateMembers)) {
-      member = message.member;
-    }
-    if (!member) return message.reply("User not found");
-    const userWarnings = warnings[member.id] || [];
-    const embed = new EmbedBuilder()
-      .setTitle(`${member.user.tag} Warnings`)
-      .setColor("#FF00FF")
-      .setDescription(userWarnings.length 
-        ? userWarnings.map((w,i) => `${i+1}. ${w.reason} - ${w.date}`).join("\n")
-        : "No warnings")
-      .setTimestamp();
-    message.channel.send({ embeds: [embed] });
+// === WARNINGS ===
+if (cmd === "warnings") {
+  let member;
+
+  // If a user ID or mention is provided
+  if (args[0]) {
+    member = resolveMember(message, args[0]) || message.guild.members.cache.get(args[0]);
   }
+
+  // Check permissions
+  const isStaff = message.member.permissions.has(PermissionsBitField.Flags.ModerateMembers);
+
+  if (!isStaff) {
+    // Regular users can only see their own warnings
+    if (member && member.id !== message.member.id) {
+      return message.reply("❌ You can only view your own warnings. Only server staff can view other users' warnings.");
+    }
+    member = message.member; // Default to self
+  }
+
+  if (!member) return message.reply("User not found");
+
+  const userWarnings = warnings[member.id] || [];
+  const embed = new EmbedBuilder()
+    .setTitle(`${member.user.tag} Warnings`)
+    .setColor("#FF00FF")
+    .setDescription(
+      userWarnings.length
+        ? userWarnings.map((w, i) => `${i + 1}. ${w.reason} - ${w.date}`).join("\n")
+        : "No warnings"
+    )
+    .setTimestamp();
+
+  message.channel.send({ embeds: [embed] });
+}
+
 
   // === TIMEOUT ===
   if (cmd === "timeout") {
     if (!message.member.permissions.has(PermissionsBitField.Flags.ModerateMembers)) return message.reply("No permission");
-    const member = resolveMember(message, args[0]);
+    const member = await resolveMemberOrID(message, args[0]);
     const minutes = parseInt(args[1]);
     if (!member || isNaN(minutes)) return message.reply("Usage: .timeout <user> <minutes>");
     await member.timeout(minutes*60*1000);
@@ -179,7 +193,7 @@ client.on("messageCreate", async message => {
   // === UNTIMEOUT ===
   if (cmd === "untimeout") {
     if (!message.member.permissions.has(PermissionsBitField.Flags.ModerateMembers)) return message.reply("No permission");
-    const member = resolveMember(message, args[0]);
+    const member = await resolveMemberOrID(message, args[0]);
     if (!member) return message.reply("User not found");
     await member.timeout(null);
     message.channel.send({ embeds: [createEmbed("Timeout Removed", `${member.user.tag}'s timeout removed.`, "#00FF00")] });
@@ -197,4 +211,4 @@ client.on("messageCreate", async message => {
 
 });
 
-client.login("YOUR_BOT_TOKEN");
+client.login(TOKEN);
