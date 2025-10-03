@@ -153,7 +153,7 @@ if (cmd === "warnings") {
   }
 
   // Check permissions
-  const isStaff = message.member.permissions.has(PermissionsBitField.Flags.ModerateMembers);
+  const isStaff = message.member.permissions.has(PermissionsBitField.Flags.ModerateMembers)
 
   if (!isStaff) {
     // Regular users can only see their own warnings
