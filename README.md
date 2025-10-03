@@ -1,1 +1,5 @@
-on beta any bugs dm me on discord: idkkk08714p
+moderation bot logs:
+Make code 15v 
+
+Next Update:
+Adding custom status soon.
