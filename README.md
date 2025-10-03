@@ -26,7 +26,7 @@ A Discord moderation bot template built with Discord.js v15. Logs all moderation
 
 ## Setup
 
-1. Clone the repo: git clone https://github.com/YourUsername/moderation-logs-bot.git
+1. Clone the repo: git clone https://github.com/2k937/moderation-logs-bot.git
 2. Install dependencies: npm install
 3. Configure `index.js` with your bot token.
 4. Run the bot: node index.js
