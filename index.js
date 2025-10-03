@@ -42,7 +42,18 @@ function createEmbed(title, description, color = "#FF0000") {
 }
 
 // === Bot Ready ===
-client.on("ready", () => console.log(`Logged in as ${client.user.tag}`));
+client.on("ready", () => {
+  console.log(`✅ Logged in as ${client.user.tag}`);
+
+  // Set a single status
+  client.user.setPresence({
+    activities: [
+      { name: "made by 2k937 - moderation-bot-open-source", type: 3 } // type: 0=Playing, 1=Streaming, 2=Listening, 3=Watching
+    ],
+    status: "dnd" // can be 'idle', 'dnd', 'invisible'
+  });
+});
+
 
 // === Message Handler ===
 client.on("messageCreate", async message => {
