@@ -32,3 +32,27 @@ A Discord moderation bot template built with Discord.js v15. Logs all moderation
 4. Run the bot: node index.js
 
 
+---
+
+## Commands
+
+- `warn @user <reason>` — Warn a user and log it.
+- `kick @user <reason>` — Kick a user from the server.
+- `ban @user <reason>` — Ban a user from the server.
+
+> More commands will be added in future updates.
+
+---
+
+## Contribution
+
+Contributions are welcome! Fork the repo and submit a pull request.
+Please report any bugs or issues in the GitHub Issues tab.
+
+---
+
+## License
+
+MIT License — free to use and modify.
+
+
