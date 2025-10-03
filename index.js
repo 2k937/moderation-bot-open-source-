@@ -14,6 +14,8 @@ const client = new Client({
   partials: [Partials.Message, Partials.Channel, Partials.Reaction],
 });
 
+require("./appeal")(client);
+
 // === Data Files ===
 const warningsFile = path.join(__dirname, 'warnings.json');
 let warnings = fs.existsSync(warningsFile) ? JSON.parse(fs.readFileSync(warningsFile, 'utf8')) : {};
