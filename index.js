@@ -15,7 +15,7 @@ const client = new Client({
 });
 
 require("./appeal")(client);
-require("./cmd.js")(client, prefix);
+require("./cmd.js")(client, PREFIX);
 
 // === Data Files ===
 const warningsFile = path.join(__dirname, 'warnings.json');
