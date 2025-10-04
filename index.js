@@ -146,18 +146,55 @@ client.on("messageCreate", async message => {
     message.channel.send({ embeds: [createEmbed("Kick", `${member.user.tag} was kicked.\nReason: ${reason}`, "#FF4500")] });
   }
 
-  // === WARN ===
-  if (cmd === "warn") {
-    if (!message.member.permissions.has(PermissionsBitField.Flags.ModerateMembers)) return message.reply("No permission");
-    const member = await resolveMemberOrID(message, args[0]);
-    if (!member) return message.reply("User not found");
-    const reason = args.slice(1).join(" ") || "No reason provided";
+// === WARN ===
+if (cmd === "warn") {
+  if (!message.member.permissions.has(PermissionsBitField.Flags.ModerateMembers)) 
+    return message.reply("❌ No permission.");
 
-    if (!warnings[member.id]) warnings[member.id] = [];
-    warnings[member.id].push({ reason, date: new Date().toISOString() });
-    saveWarnings();
-    message.channel.send({ embeds: [createEmbed("Warn", `${member.user.tag} was warned.\nReason: ${reason}`, "#FFA500")] });
+  // Resolve member
+  let member = message.mentions.members.first() 
+             || message.guild.members.cache.get(args[0]);
+  if (!member) {
+    try {
+      member = await message.guild.members.fetch(args[0]);
+    } catch (err) {
+      member = null;
+    }
   }
+
+  if (!member) return message.reply("❌ User not found.");
+
+  const reason = args.slice(1).join(" ") || "No reason provided";
+
+  // Add warning
+  if (!warnings[member.id]) warnings[member.id] = [];
+  warnings[member.id].push({ reason, date: new Date().toISOString() });
+  saveWarnings();
+
+  const warnCount = warnings[member.id].length;
+
+  // Send warn embed
+  message.channel.send({ embeds: [createEmbed("Warn", `${member.user.tag} was warned.\nReason: ${reason}`, "#FFA500")] });
+
+  // === AUTO PUNISHMENTS ===
+  if (warnCount === 5) {
+    await member.timeout(10 * 60 * 1000, "Reached 5 warnings"); // 10 minutes
+    message.channel.send(`${member} has been timed out for **10 minutes** (5 warnings).`);
+  } 
+  else if (warnCount === 7) {
+    await member.timeout(2 * 24 * 60 * 60 * 1000, "Reached 7 warnings"); // 2 days
+    message.channel.send(`${member} has been timed out for **2 days** (7 warnings).`);
+  } 
+  else if (warnCount === 10) {
+    await member.kick("Reached 10 warnings");
+    message.channel.send(`${member.user.tag} was **kicked** (10 warnings).`);
+  } 
+  else if (warnCount >= 12) {
+    await member.ban({ reason: "Reached 12 warnings" });
+    message.channel.send(`${member.user.tag} was **banned** (12 warnings).`);
+  }
+}
+
 
   // === UNWARN ===
   if (cmd === "unwarn") {
