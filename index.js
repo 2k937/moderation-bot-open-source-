@@ -25,13 +25,10 @@ function saveWarnings() { fs.writeFileSync(warningsFile, JSON.stringify(warnings
 
 async function resolveMemberOrID(message, arg) {
   if (!arg) return null;
-
-  // If it's a mention, resolve member
   const mentionId = arg.replace(/[<@!>]/g, "");
   const member = message.guild.members.cache.get(mentionId);
   if (member) return member;
 
-  // If it's a raw ID, try fetching the member
   try {
     return await message.guild.members.fetch(arg);
   } catch {
@@ -47,15 +44,13 @@ function createEmbed(title, description, color = "#FF0000") {
 client.on("ready", () => {
   console.log(`✅ Logged in as ${client.user.tag}`);
 
-  // Set a single status
   client.user.setPresence({
     activities: [
-      { name: "made by 2k937 - moderation-bot-open-source", type: 3 } // type: 0=Playing, 1=Streaming, 2=Listening, 3=Watching
+      { name: "made by 2k937 - moderation-bot-open-source", type: 3 } 
     ],
-    status: "dnd" // can be 'idle', 'dnd', 'invisible'
+    status: "dnd"
   });
 });
-
 
 // === Message Handler ===
 client.on("messageCreate", async message => {
@@ -63,6 +58,23 @@ client.on("messageCreate", async message => {
 
   const args = message.content.slice(PREFIX.length).trim().split(/ +/);
   const cmd = args.shift().toLowerCase();
+
+  // === PING ===
+  if (cmd === "ping") {
+    const sent = await message.channel.send("🏓 Pinging...");
+    const embed = new EmbedBuilder()
+      .setTitle("🏓 Pong!")
+      .setColor("#00FF00")
+      .addFields(
+        { name: "API Latency", value: `${client.ws.ping}ms`, inline: true },
+        { name: "Message Latency", value: `${sent.createdTimestamp - message.createdTimestamp}ms`, inline: true },
+        { name: "Uptime", value: `${Math.floor(client.uptime / 1000 / 60)} minutes`, inline: true },
+        { name: "Guilds", value: `${client.guilds.cache.size}`, inline: true },
+        { name: "Users", value: `${client.users.cache.size}`, inline: true }
+      )
+      .setTimestamp();
+    await sent.edit({ content: null, embeds: [embed] });
+  }
 
   // === HELP ===
   if (cmd === "help") {
@@ -83,7 +95,8 @@ client.on("messageCreate", async message => {
         { name: ".warnings [user]", value: "Check warnings (mods: any user, members: self only)" },
         { name: ".timeout <user> <minutes>", value: "Timeout a member" },
         { name: ".untimeout <user>", value: "Remove timeout" },
-        { name: ".purge <#>", value: "Delete messages (1-100)" }
+        { name: ".purge <#>", value: "Delete messages (1-100)" },
+        { name: ".ping", value: "Check bot latency and info" }
       )
       .setFooter({ text: "Only Moderators can see this help menu" })
       .setTimestamp();
@@ -156,42 +169,35 @@ client.on("messageCreate", async message => {
     message.channel.send({ embeds: [createEmbed("Warning Removed", `Removed warning #${index+1} from ${member.user.tag}`, "#00FF00")] });
   }
 
-// === WARNINGS ===
-if (cmd === "warnings") {
-  let member;
-
-  // If a user ID or mention is provided
-  if (args[0]) {
-    member = resolveMember(message, args[0]) || message.guild.members.cache.get(args[0]);
-  }
-
-  // Check permissions
-  const isStaff = message.member.permissions.has(PermissionsBitField.Flags.ModerateMembers)
-
-  if (!isStaff) {
-    // Regular users can only see their own warnings
-    if (member && member.id !== message.member.id) {
-      return message.reply("❌ You can only view your own warnings. Only server staff can view other users' warnings.");
+  // === WARNINGS ===
+  if (cmd === "warnings") {
+    let member;
+    if (args[0]) {
+      member = resolveMember(message, args[0]) || message.guild.members.cache.get(args[0]);
     }
-    member = message.member; // Default to self
+
+    const isStaff = message.member.permissions.has(PermissionsBitField.Flags.ModerateMembers)
+    if (!isStaff) {
+      if (member && member.id !== message.member.id) {
+        return message.reply("❌ You can only view your own warnings. Only server staff can view other users' warnings.");
+      }
+      member = message.member;
+    }
+
+    if (!member) return message.reply("User not found");
+    const userWarnings = warnings[member.id] || [];
+    const embed = new EmbedBuilder()
+      .setTitle(`${member.user.tag} Warnings`)
+      .setColor("#FF00FF")
+      .setDescription(
+        userWarnings.length
+          ? userWarnings.map((w, i) => `${i + 1}. ${w.reason} - ${w.date}`).join("\n")
+          : "No warnings"
+      )
+      .setTimestamp();
+
+    message.channel.send({ embeds: [embed] });
   }
-
-  if (!member) return message.reply("User not found");
-
-  const userWarnings = warnings[member.id] || [];
-  const embed = new EmbedBuilder()
-    .setTitle(`${member.user.tag} Warnings`)
-    .setColor("#FF00FF")
-    .setDescription(
-      userWarnings.length
-        ? userWarnings.map((w, i) => `${i + 1}. ${w.reason} - ${w.date}`).join("\n")
-        : "No warnings"
-    )
-    .setTimestamp();
-
-  message.channel.send({ embeds: [embed] });
-}
-
 
   // === TIMEOUT ===
   if (cmd === "timeout") {
@@ -221,7 +227,6 @@ if (cmd === "warnings") {
     message.channel.send({ embeds: [createEmbed("Messages Purged", `Deleted ${deleted.size} messages.`, "#FFAA00")] })
       .then(msg => setTimeout(() => msg.delete(), 5000));
   }
-
 });
 
 client.login(TOKEN);
