@@ -170,35 +170,48 @@ client.on("messageCreate", async message => {
     message.channel.send({ embeds: [createEmbed("Warning Removed", `Removed warning #${index+1} from ${member.user.tag}`, "#00FF00")] });
   }
 
-  // === WARNINGS ===
-  if (cmd === "warnings") {
-    let member;
-    if (args[0]) {
-      member = resolveMember(message, args[0]) || message.guild.members.cache.get(args[0]);
-    }
+// === WARNINGS ===
+if (cmd === "warnings") {
+  let member;
 
-    const isStaff = message.member.permissions.has(PermissionsBitField.Flags.ModerateMembers)
-    if (!isStaff) {
-      if (member && member.id !== message.member.id) {
-        return message.reply("❌ You can only view your own warnings. Only server staff can view other users' warnings.");
+  if (args[0]) {
+    // Try mention first, then by ID
+    member = message.mentions.members.first() 
+          || message.guild.members.cache.get(args[0]);
+    
+    // If not cached, fetch from API
+    if (!member) {
+      try {
+        member = await message.guild.members.fetch(args[0]);
+      } catch (err) {
+        member = null;
       }
-      member = message.member;
     }
-
-    if (!member) return message.reply("User not found");
-    const userWarnings = warnings[member.id] || [];
-    const embed = new EmbedBuilder()
-      .setTitle(`${member.user.tag} Warnings`)
-      .setColor("#FF00FF")
-      .setDescription(
-        userWarnings.length
-          ? userWarnings.map((w, i) => `${i + 1}. ${w.reason} - ${w.date}`).join("\n")
-          : "No warnings"
-      )
-      .setTimestamp();
-
-    message.channel.send({ embeds: [embed] });
   }
+
+  const isStaff = message.member.permissions.has(PermissionsBitField.Flags.ModerateMembers);
+  if (!isStaff) {
+    if (member && member.id !== message.member.id) {
+      return message.reply("❌ You can only view your own warnings. Only server staff can view other users' warnings.");
+    }
+    member = message.member;
+  }
+
+  if (!member) return message.reply("User not found");
+
+  const userWarnings = warnings[member.id] || [];
+  const embed = new EmbedBuilder()
+    .setTitle(`${member.user.tag} Warnings`)
+    .setColor("#FF00FF")
+    .setDescription(
+      userWarnings.length
+        ? userWarnings.map((w, i) => `${i + 1}. ${w.reason} - ${w.date}`).join("\n")
+        : "No warnings"
+    )
+    .setTimestamp();
+
+  message.channel.send({ embeds: [embed] });
+}
 
   // === TIMEOUT ===
   if (cmd === "timeout") {
