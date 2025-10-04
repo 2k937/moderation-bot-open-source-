@@ -6,14 +6,15 @@ const {
   TextInputBuilder,
   TextInputStyle,
   ModalBuilder,
-  ChannelType
+  ChannelType,
+  EmbedBuilder
 } = require("discord.js");
 
 module.exports = async (client) => {
-  const APPEAL_CATEGORY_ID = "APPEAL_CATEGORY_ID";
-  const STAFF_ROLE_ID = "STAFF_ROLE_ID";
-  const PANEL_CHANNEL_ID = "APPEAL_PANEL_CHANNEL_ID";
-  const MAIN_GUILD_ID = "MAIN_SERVER_ID";
+  const APPEAL_CATEGORY_ID = "";
+  const STAFF_ROLE_ID = "";
+  const PANEL_CHANNEL_ID = "";
+  const MAIN_GUILD_ID = "";
 
   if (!APPEAL_CATEGORY_ID || !STAFF_ROLE_ID || !PANEL_CHANNEL_ID || !MAIN_GUILD_ID) return;
 
@@ -37,7 +38,22 @@ module.exports = async (client) => {
         ])
     );
 
-    channel.send({ content: "📩 Submit an appeal:", components: [row] });
+ const embed = new EmbedBuilder()
+  .setTitle("📩 Submit an Appeal")
+  .setColor("#00FFFF")
+  .setDescription(
+    "You can submit appeals for:\n" +
+    "• **Ban**\n" +
+    "• **Timeout**\n" +
+    "• **Warnings**\n" +
+    "• **Other issues**\n\n" +
+    "Select an option from the menu below to start your appeal."
+  )
+  .setFooter({ text: "Staff will review your appeal and respond accordingly." })
+  .setTimestamp();
+
+channel.send({ embeds: [embed], components: [row] });
+
   });
 
   client.on("interactionCreate", async (interaction) => {
@@ -66,11 +82,11 @@ module.exports = async (client) => {
         .setTitle(`Submit ${appealType} appeal`);
 
       const discordInfoInput = new TextInputBuilder()
-        .setCustomId("discord_info")
-        .setLabel("Your Discord Username and ID")
-        .setStyle(TextInputStyle.Short)
-        .setPlaceholder(`${interaction.user.tag} | ${userId} (read-only, do not change)`)
-        .setRequired(true);
+     .setCustomId("discord_info")
+    . setLabel("Discord ID")
+      .setStyle(TextInputStyle.Short)
+      .setRequired(true);
+
 
       const reasonInput = new TextInputBuilder()
         .setCustomId("appeal_reason")
