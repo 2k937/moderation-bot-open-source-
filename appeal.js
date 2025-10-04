@@ -8,7 +8,7 @@ module.exports = async (client) => {
   const MAIN_GUILD_ID = "MAIN_SERVER_ID"; // Main server for bans/timeouts
 
   // Skip module if any config is missing
-  if (!APPEAL_CATEGORY_ID || !STAFF_ROLE_ID || !PANEL_CHANNEL_ID || !MAIN_GUILD_ID) return;
+  if (!APPEAL_CATEGORY_ID || !STAFF_ROLE_ID || !PAnoNEL_CHANNEL_ID || !MAIN_GUILD_ID) return;
 
   // === SEND PANEL ===
   client.on("ready", async () => {
