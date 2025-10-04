@@ -1,4 +1,26 @@
 {
+  "name": "moderation-bot-open-source",
+  "version": "1.0.0",
+  "description": "An open-source Discord moderation bot built with discord.js v14.",
+  "main": "index.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"No tests yet\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/2k937/moderation-bot-open-source-.git"
+  },
+  "keywords": [
+    "discord",
+    "moderation",
+    "bot",
+    "discord.js",
+    "open-source"
+  ],
+  "author": "2k937",
+  "license": "MIT",
   "dependencies": {
     "discord.js": "^14.22.1"
   }
