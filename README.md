@@ -1,1 +1,1 @@
-support.gg
+best to host with: https://betadash.lunes.host/
