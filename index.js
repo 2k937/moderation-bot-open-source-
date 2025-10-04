@@ -2,8 +2,8 @@ const { Client, GatewayIntentBits, Partials, EmbedBuilder, PermissionsBitField }
 const fs = require("fs");
 const path = require("path");
 
-const PREFIX = ".";
-const TOKEN = "YOUR_BOT_TOKEN_HERE"; 
+const PREFIX = "m!";
+const TOKEN = "TOKEN HERE"; 
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -84,19 +84,19 @@ client.on("messageCreate", async message => {
 
     const embed = new EmbedBuilder()
       .setTitle("Moderation Commands Help")
-      .setColor("#00FFFF")
+      .setColor("#FF0000") // pure red
       .setDescription("Commands for moderators:")
       .addFields(
-        { name: ".ban <user> [reason]", value: "Ban a member" },
-        { name: ".unban <user> [reason]", value: "Unban a member" },
-        { name: ".kick <user> [reason]", value: "Kick a member" },
-        { name: ".warn <user> [reason]", value: "Warn a member" },
-        { name: ".unwarn <user> <#>", value: "Remove a specific warning" },
-        { name: ".warnings [user]", value: "Check warnings (mods: any user, members: self only)" },
-        { name: ".timeout <user> <minutes>", value: "Timeout a member" },
-        { name: ".untimeout <user>", value: "Remove timeout" },
-        { name: ".purge <#>", value: "Delete messages (1-100)" },
-        { name: ".ping", value: "Check bot latency and info" }
+        { name: "m!ban <user> [reason]", value: "Ban a member" },
+        { name: "m!unban <user> [reason]", value: "Unban a member" },
+        { name: "m!kick <user> [reason]", value: "Kick a member" },
+        { name: "m!warn <user> [reason]", value: "Warn a member" },
+        { name: "m!unwarn <user> <#>", value: "Remove a specific warning" },
+        { name: "m!warnings [user]", value: "Check warnings (mods: any user, members: self only)" },
+        { name: "m!timeout <user> <minutes>", value: "Timeout a member" },
+        { name: "m!untimeout <user>", value: "Remove timeout" },
+        { name: "m!purge <#>", value: "Delete messages (1-100)" },
+        { name: "m!ping", value: "Check bot latency and info" }
       )
       .setFooter({ text: "Only Moderators can see this help menu" })
       .setTimestamp();
