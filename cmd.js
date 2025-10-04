@@ -16,31 +16,36 @@ module.exports = (client, PREFIX) => {
   client.on("messageCreate", async (message) => {
     if (message.author.bot || !message.guild) return;
 
-    // ----- AutoMod -----
-    if (automodEnabled[message.guild.id]) {
-      const inviteRegex = /(discord\.gg|discord\.com\/invite)/i;
-      const linkRegex = /(https?:\/\/[^\s]+)/i;
+// ----- AutoMod -----
+if (automodEnabled[message.guild.id]) {
+  const member = message.guild.members.cache.get(message.author.id);
+  if (!member) return;
 
-      if (inviteRegex.test(message.content) || linkRegex.test(message.content)) {
-        await message.delete().catch(() => {});
+  // WHITELIST: skip admins and manage-guild perms
+  if (member.permissions.has("Administrator") || member.permissions.has("ManageGuild")) return;
 
-        if (!warnings[message.author.id]) warnings[message.author.id] = { warns: 0 };
-        warnings[message.author.id].warns += 1;
-        fs.writeFileSync("./warnings.json", JSON.stringify(warnings, null, 2));
+  const inviteRegex = /(discord\.gg|discord\.com\/invite)/i;
+  const linkRegex = /(https?:\/\/[^\s]+)/i;
 
-        const member = message.guild.members.cache.get(message.author.id);
-        message.channel.send(
-          `⚠️ ${message.author}, posting links/invites is not allowed! Warning **${warnings[message.author.id].warns}**.`
-        );
+  if (inviteRegex.test(message.content) || linkRegex.test(message.content)) {
+    await message.delete().catch(() => {});
 
-        if (!member) return;
-        const warns = warnings[message.author.id].warns;
-        if (warns === 1) await member.timeout(6 * 60 * 1000).catch(() => {});
-        else if (warns === 2) await member.timeout(12 * 60 * 1000).catch(() => {});
-        else if (warns === 3) await member.kick({ reason: "3 warnings (AutoMod)" }).catch(() => {});
-        else if (warns >= 4) await member.ban({ reason: "4+ warnings (AutoMod)" }).catch(() => {});
-      }
-    }
+    if (!warnings[message.author.id]) warnings[message.author.id] = { warns: 0 };
+    warnings[message.author.id].warns += 1;
+    fs.writeFileSync("./warnings.json", JSON.stringify(warnings, null, 2));
+
+    message.channel.send(
+      `⚠️ ${message.author}, posting links/invites is not allowed! Warning **${warnings[message.author.id].warns}**.`
+    );
+
+    const warns = warnings[message.author.id].warns;
+    if (warns === 1) await member.timeout(6 * 60 * 1000).catch(() => {});
+    else if (warns === 2) await member.timeout(12 * 60 * 1000).catch(() => {});
+    else if (warns === 3) await member.kick({ reason: "3 warnings (AutoMod)" }).catch(() => {});
+    else if (warns >= 4) await member.ban({ reason: "4+ warnings (AutoMod)" }).catch(() => {});
+  }
+}
+
 
     // ----- Commands -----
     if (!message.content.startsWith(PREFIX)) return;
