@@ -92,29 +92,59 @@ if (automodEnabled[message.guild.id]) {
       message.channel.send({ embeds: [embed] });
     }
 
-    // ----- Role Management -----
-    if (cmd === "role") {
-      const sub = args.shift();
-      const target = args.shift();
-      const roleName = args.join(" ");
-      if (!sub || !target || !roleName) return message.reply(`Usage: ${PREFIX}role a|r @user RoleName`);
+// ----- Role Management -----
+if (cmd === "role") {
+  const sub = args.shift(); // a or r
+  const targetArg = args.shift(); // mention or ID
+  const roleArg = args.join(" "); // role name, mention, or ID
 
-      const member = message.mentions.members.first() || message.guild.members.cache.get(target);
-      if (!member) return message.reply("User not found.");
+  if (!sub || !targetArg || !roleArg) 
+    return message.reply(`Usage: ${PREFIX}role a|r @user RoleName|ID|Mention`);
 
-      const role = message.guild.roles.cache.find((r) => r.name.toLowerCase() === roleName.toLowerCase());
-      if (!role) return message.reply("Role not found.");
+  // Resolve member
+  let targetMember;
+  const mentionMatch = targetArg.match(/^<@!?(\d+)>$/); // matches <@id> or <@!id>
+  if (mentionMatch) {
+    targetMember = message.guild.members.cache.get(mentionMatch[1]);
+  } else {
+    targetMember = message.guild.members.cache.get(targetArg);
+  }
+  if (!targetMember) return message.reply("User not found.");
 
-      if (sub === "a") {
-        await member.roles.add(role).catch(() => {});
-        message.reply(`✅ Added role ${role.name} to ${member.user.tag}`);
-      } else if (sub === "r") {
-        await member.roles.remove(role).catch(() => {});
-        message.reply(`✅ Removed role ${role.name} from ${member.user.tag}`);
-      } else {
-        message.reply("Invalid subcommand, use `a` to add or `r` to remove.");
-      }
-    }
+  // Resolve role
+  let role;
+
+  // 1. Role mention
+  const roleMentionMatch = roleArg.match(/^<@&(\d+)>$/);
+  if (roleMentionMatch) {
+    role = message.guild.roles.cache.get(roleMentionMatch[1]);
+  }
+
+  // 2. Role ID
+  if (!role && /^\d+$/.test(roleArg)) {
+    role = message.guild.roles.cache.get(roleArg);
+  }
+
+  // 3. Role name (case-insensitive)
+  if (!role) {
+    role = message.guild.roles.cache.find(r => r.name.toLowerCase() === roleArg.toLowerCase());
+  }
+
+  if (!role) return message.reply("Role not found.");
+
+  // Add or remove role
+  if (sub.toLowerCase() === "a") {
+    await targetMember.roles.add(role).catch(err => message.reply("Failed to add role."));
+    message.reply(`✅ Added role **${role.name}** to ${targetMember.user.tag}`);
+  } else if (sub.toLowerCase() === "r") {
+    await targetMember.roles.remove(role).catch(err => message.reply("Failed to remove role."));
+    message.reply(`✅ Removed role **${role.name}** from ${targetMember.user.tag}`);
+  } else {
+    message.reply("Invalid subcommand, use `a` to add or `r` to remove.");
+  }
+}
+
+
 
     // ----- Setup AutoMod -----
     if (cmd === "setup") {
