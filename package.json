@@ -10,7 +10,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/2k937/moderation-bot-open-source-.git"
+    "url": "git+https://github.com/2k937/moderation-bot-open-source-.git"
   },
   "keywords": [
     "discord",
