@@ -1,1 +1,1 @@
-best to host with: https://betadash.lunes.host/
+a moderation discord bot can be use as for your server.
