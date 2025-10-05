@@ -27,16 +27,17 @@ module.exports = async (client) => {
       if (msg.author.id === client.user.id) msg.delete().catch(() => {});
     });
 
-    const row = new ActionRowBuilder().addComponents(
-      new StringSelectMenuBuilder()
-        .setCustomId("appeal_menu")
-        .setPlaceholder("Select appeal type")
-        .addOptions([
-          { label: "Ban Appeal", value: "ban" },
-          { label: "Timeout Appeal", value: "timeout" },
-          { label: "Other", value: "other" },
-        ])
-    );
+const row = new ActionRowBuilder().addComponents(
+  new StringSelectMenuBuilder()
+    .setCustomId("appeal_menu")
+    .setPlaceholder("Select appeal type")
+    .addOptions([
+      { label: "Ban Appeal", value: "ban" },
+      { label: "Timeout Appeal", value: "timeout" },
+      { label: "Warning Appeal", value: "warning" }, // changed from "Other"
+    ])
+);
+
 
  const embed = new EmbedBuilder()
   .setTitle("📩 Submit an Appeal")
