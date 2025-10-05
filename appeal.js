@@ -39,19 +39,19 @@ const row = new ActionRowBuilder().addComponents(
 );
 
 
- const embed = new EmbedBuilder()
+const embed = new EmbedBuilder()
   .setTitle("📩 Submit an Appeal")
   .setColor("#00FFFF")
   .setDescription(
     "You can submit appeals for:\n" +
     "• **Ban**\n" +
     "• **Timeout**\n" +
-    "• **Warnings**\n" +
-    "• **Other issues**\n\n" +
+    "• **Warnings**\n\n" +
     "Select an option from the menu below to start your appeal."
   )
   .setFooter({ text: "Staff will review your appeal and respond accordingly." })
   .setTimestamp();
+
 
 channel.send({ embeds: [embed], components: [row] });
 
